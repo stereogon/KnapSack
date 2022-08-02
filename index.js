@@ -72,6 +72,7 @@ app.use("^/$", isUser, isAny, require("./src/controllers/homeController"));
 app.use("/auth", require("./src/routes/authRoutes"));
 app.use("/classes", isUser, require("./src/routes/classRoutes"));
 app.use("/announcements", isUser, require("./src/routes/announcementRoutes"));
+app.use("/mysem", isUser, isAny, require("./src/routes/mysemRoutes"));
 app.use("/profile", isUser, require("./src/routes/profileRoutes"));
 app.use("/api/messages", isUser, isAny, require("./src/routes/messageRoutes"));
 
