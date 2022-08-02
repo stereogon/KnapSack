@@ -1,6 +1,7 @@
 const Class = require("../models/Class");
 const Lecture = require("../models/Lecture");
 const Message = require("../models/Message");
+const MySem = require("../models/MySem");
 const moment = require("moment");
 
 const classDetails = async (req, res) => {
@@ -11,11 +12,22 @@ const classDetails = async (req, res) => {
             id: id,
         }).populate("by");
 
+        let inmysem = false;
+
+        const mysem = await MySem.findOne({
+            user,
+            module: cls
+        }).populate("user")
+        .populate("module");
+
+        if (mysem) inmysem = true;
+
         const classes = await Class.find({
             by: user
         }).populate("by");
 
         cls.timeago = moment(cls.createdAt).fromNow();
+        cls.inmysem = inmysem;
 
         const lec = await Lecture.find({
             cls: cls
@@ -27,21 +39,33 @@ const classDetails = async (req, res) => {
     }
 };
 
-const deleteClass = (req, res) => {
+const deleteClass = async (req, res) => {
     const id = req.params.id;
 
     try {
-        Class.deleteOne({
-            id: id,
-        })
-            .then(() => {
-                res.status(200);
+        const cls = await Class.findOne({
+            id: id
+        });
 
-                res.redirect("/classes");
-            })
-            .catch((err) => {
+        if (cls) {
+            MySem.deleteMany({
+                module: cls
+            }).then(() => {
+                Class.deleteOne({
+                    id: id
+                }).then(() => {
+                    res.status(200);
+                    res.redirect("/classes");
+                }).catch((err) => {
+                    throw Error(err.message);
+                })
+            }).catch((err) => {
                 throw Error(err.message);
-            });
+            })
+        } else {
+            res.status(404);
+            throw Error("Wrong Class Id");
+        }
     } catch (err) {
         res.status(404).json({ error: err });
     }
